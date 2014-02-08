@@ -1,0 +1,110 @@
+NAME
+  anarchinst - non-interactive installer for ArchLinux
+
+SYNOPSIS
+  anarchinst --help | --example | <configfile>
+
+DESCRIPTION
+  anarchinst is a non-interactive installer for ArchLinux
+  meant to be run from the ArchLinux live DVD.  It is driven by
+  a configuration file using Zsh syntax.  A commented example
+  configuration is available by running `anarchinst --example`.
+
+  anarchinst is suitable for the simple scenario of installing over
+  a single harddisk in either (legacy) BIOS or (modern, cough), UEFI
+  systems.
+
+  When run with a <configfile> argument, anarchinst will first report
+  the requested and current configuration of the underlying system.
+  If it finds any errors in <configfile> or incompatibilities
+  with the system in question, anarchinst will abort.
+
+  When the configuration has been validated, anarchinst will
+
+  * overwrite the disklabel on `$disk`
+  * create filesystems in the new slices
+  * mount the filesystems under `$destdir`
+  * install `$packages` under `$destdir`
+  * configure the tree under `$destdir` for `$hostname`,
+    `$locale`, `$timezone`
+  * unmount the `$destdir` tree
+
+  If all goes well you were lucky and should have an ArchLinux
+  system installed on `$disk`.
+
+Disklabels
+  anarchinst supports two kinds of disklabels: `gpt` and `msdos`.
+
+  :gpt:
+    Only supported on UEFI systems.  Make sure `$slices`
+    specifies a separate slice for `/boot`, and that it's `fat`;
+    this is the so called ESP, EFI System Partition.
+    anarchinst installs SYSLINUX under `/boot/EFI/syslinux`.
+
+  :msdos:
+    Supported on both UEFI and BIOS systems.  `/boot` needs not
+    be a separate slice, but SYSLINUX is reported to break btrfs
+    volumes if installed into that.  Other filesystem types should
+    be ok.  anarchinst installs SYSLINUX under `/boot/MBR/syslinux`
+    (for symmetry with the EFI case).
+
+OPTIONS
+  -h, --help
+    print this message and quit
+
+  --example
+    print an example configuration and quit
+
+ASSUMPTIONS
+  anarchinst makes several assumptions, make sure they hold before
+  using this tool:
+
+  * you don't mind obliterating the contents of the target device
+  * you want to use Syslinux, and it works on your platform
+    (ie. only x86, x64; is there eg. ArchLinux/powerpc64 at all?)
+  * the hardware (BIOS) clock is set to UTC
+
+TERMINOLOGY
+  :disklabel:
+    also partition table
+
+  :slice:
+    also partition
+
+ENVIRONMENT
+  anarchinst itself uses no environment variables.  It is, however,
+  implemented in terms of third-party commands which do use them.
+  This means that anarchinst may be influenced by environment
+  variables used by the commands listed in the SEE ALSO section,
+  possibly others.  When in doubt, try using anarchinst under `env -i`.
+
+SEE ALSO
+  extlinux(1), syslinux(1), btrfs(8), efibootmgr(8), mkfs(8),
+  mkswap(8), parted(8).
+
+CONFORMING TO
+  Its own whims only.
+
+HISTORY
+  anarchinst first appeared out of nowhere.
+
+AUTHORS
+  Roman Neuhauser <neuhauser@sigpipe.cz>
+
+BUGS
+  In the best GNU/Linux tradition, anarchinst has no bugs at all,
+  only incompatible interfaces and conflicting implementations.
+  If it breaks you can keep the pieces.
+
+  So far there's effectively no support for reusing existing
+  slices or coexistence with other installations on the same drive.
+
+  Networking setup is nonexistent.  The ArchLinux live media
+  configures all devices formerly known as `ethX` for DHCP,
+  so this works without any user intervention.  For wireless,
+  `wifi-menu` WORKSFORME.
+
+  Networking setup in the target system is also still coming.
+
+  Patches are welcome at
+  <https://github.com/roman-neuhauser/anarchinst/>.
