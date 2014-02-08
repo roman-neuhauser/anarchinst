@@ -1,0 +1,503 @@
+#!/usr/bin/env zsh
+# vim: sw=2 sts=2 ts=8 et fdm=marker cms=\ #\ %s
+
+### HELP START # {{{
+# NAME
+#   $0 - non-interactive installer for ArchLinux
+#
+# SYNOPSIS
+#   $0 --help | --example | <configfile>
+#
+# DESCRIPTION
+#   $0 is a non-interactive installer for ArchLinux
+#   meant to be run from the ArchLinux live DVD.  It is driven by
+#   a configuration file using Zsh syntax.  A commented example
+#   configuration is available by running `$0 --example`.
+#
+#   $0 is suitable for the simple scenario of installing over
+#   a single harddisk in either (legacy) BIOS or (modern, cough), UEFI
+#   systems.
+#
+#   When run with a <configfile> argument, $0 will first report
+#   the requested and current configuration of the underlying system.
+#   If it finds any errors in <configfile> or incompatibilities
+#   with the system in question, $0 will abort.
+#
+#   When the configuration has been validated, $0 will
+#
+#   * overwrite the disklabel on `$disk`
+#   * create filesystems in the new slices
+#   * mount the filesystems under `$destdir`
+#   * install `$packages` under `$destdir`
+#   * configure the tree under `$destdir` for `$hostname`,
+#     `$locale`, `$timezone`
+#   * unmount the `$destdir` tree
+#
+#   If all goes well you were lucky and should have an ArchLinux
+#   system installed on `$disk`.
+#
+# Disklabels
+#   $0 supports two kinds of disklabels: `gpt` and `msdos`.
+#
+#   :gpt:
+#     Only supported on UEFI systems.  Make sure `$slices`
+#     specifies a separate slice for `/boot`, and that it's `fat`;
+#     this is the so called ESP, EFI System Partition.
+#     $0 installs SYSLINUX under `/boot/EFI/syslinux`.
+#
+#   :msdos:
+#     Supported on both UEFI and BIOS systems.  `/boot` needs not
+#     be a separate slice, but SYSLINUX is reported to break btrfs
+#     volumes if installed into that.  Other filesystem types should
+#     be ok.  $0 installs SYSLINUX under `/boot/MBR/syslinux`
+#     (for symmetry with the EFI case).
+#
+# OPTIONS
+#   -h, --help
+#     print this message and quit
+#
+#   --example
+#     print an example configuration and quit
+#
+# ASSUMPTIONS
+#   $0 makes several assumptions, make sure they hold before
+#   using this tool:
+#
+#   * you don't mind obliterating the contents of the target device
+#   * you want to use Syslinux, and it works on your platform
+#     (ie. only x86, x64; is there eg. ArchLinux/powerpc64 at all?)
+#   * the hardware (BIOS) clock is set to UTC
+#
+# TERMINOLOGY
+#   :disklabel:
+#     also partition table
+#
+#   :slice:
+#     also partition
+#
+# ENVIRONMENT
+#   $0 itself uses no environment variables.  It is, however,
+#   implemented in terms of third-party commands which do use them.
+#   This means that $0 may be influenced by environment
+#   variables used by the commands listed in the SEE ALSO section,
+#   possibly others.  When in doubt, try using $0 under `env -i`.
+#
+# SEE ALSO
+#   extlinux(1), syslinux(1), btrfs(8), efibootmgr(8), mkfs(8),
+#   mkswap(8), parted(8).
+#
+# CONFORMING TO
+#   Its own whims only.
+#
+# HISTORY
+#   $0 first appeared out of nowhere.
+#
+# AUTHORS
+#   Roman Neuhauser <neuhauser@sigpipe.cz>
+#
+# BUGS
+#   In the best GNU/Linux tradition, $0 has no bugs at all,
+#   only incompatible interfaces and conflicting implementations.
+#   If it breaks you can keep the pieces.
+#
+#   So far there's effectively no support for reusing existing
+#   slices or coexistence with other installations on the same drive.
+#
+#   Networking setup is nonexistent.  The ArchLinux live media
+#   configures all devices formerly known as `ethX` for DHCP,
+#   so this works without any user intervention.  For wireless,
+#   `wifi-menu` WORKSFORME.
+#
+#   Networking setup in the target system is also still coming.
+#
+#   Patches are welcome at
+#   <https://github.com/roman-neuhauser/$0/>.
+### HELP END # }}}
+
+### EXAMPLE START # {{{
+# # hostname for the target system, fully qualified
+# hostname=wrench.sigpipe.cz
+#
+# # locale used by the target system
+# # for possible values see /etc/locale.gen
+# locale=en_US.UTF-8
+#
+# # timezone used by the target system
+# # for possible values see /usr/share/zoneinfo/
+# timezone=Europe/Prague
+#
+# # device on the receiving end of the installer
+# # current limitation: neither syslinux.cfg nor
+# # fstab use uuids
+# disk=/dev/sda
+#
+# # partition table type
+# # possible values: gpt, msdos
+# disklabel=msdos
+#
+# # slice, filesystem, mountpoint specifications
+# # each slice is a string of colon-separated atoms:
+# # - mountpoint (empty = "don't mount", think swap)
+# # - slice name (gpt-only)
+# # - slice size (unit = MiB)
+# # - filesystem (btrfs, ext{2,3,4}, fat)
+# # - run mkfs? (y/n)
+# # - slice flags (see parted(8))
+# slices=(
+#   /boot:beaut:512:ext3:y:boot,legacy_boot
+#   :schwab:10240:swap
+#   /:riot:-:btrfs:y
+# )
+#
+# # an array of pacman(8) "targets" (packages and groups)
+# # syslinux is required
+# software=(
+#   base
+#   syslinux
+#   dialog wpa_supplicant
+# )
+#
+# # target filesystems will be mounted under this directory
+# # during installation
+# # optional, defaults to the result of `mktemp -d`
+# destdir=/mnt
+### EXAMPLE END # }}}
+
+_SELF=${0:t}
+_ABS0=$0
+
+setup_disk() # {{{
+{
+  : ${disk?} ${disklabel?}
+  parted -ms $disk \
+    mklabel $disklabel
+
+  local -a parts
+  local -i start=0 end=0 partno=0
+  local spec mp name fs newfs flags
+  for spec in "${(@)slices}"; do
+  for mp name size fs newfs flags in "${(@s.:.)spec}"; do
+    (( start = end + 1 ))
+    if [[ $size = - ]]; then
+      (( end = -1 ))
+    else
+      (( end = start + size ))
+    fi
+    (( partno += 1 ))
+    mkpart $disk $partno "$mp" "$name" "$start" "$end" "$flags"
+  done
+  done
+  parted -s $disk print
+
+  partno=0
+  for spec in "${(@)slices}"; do
+  for mp name size fs newfs flags in "${(@s.:.)spec}"; do
+    (( partno += 1 ))
+    [[ $newfs = y ]] || continue
+    mkfs_ $disk $partno $fs $name
+  done
+  done
+} # }}}
+mkfs_() # {{{
+{
+  local disk=${1?} partno=${2?} fs=${3?} name=${4?}
+  local dev=$disk$partno opts=
+  case $fs in
+  "")
+    return 0 ;;
+  swap)
+    mkswap $dev
+    return $? ;;
+  btrfs)
+    opts="-f ${name:+-L$name}"
+  esac
+  mkfs -t $fs ${=opts} $dev
+} # }}}
+mkpart() # {{{
+{
+  local disk=${1?} partno=${2?}
+  local mp=${3?} name=${4?} start=${5?} end=${6?} flags=${7?}
+  local flag
+  parted -ms -- $disk unit MiB mkpart primary $start $end
+  for flag in ${(s:,:)flags}; do
+    parted -ms $disk set $partno $flag on
+  done
+} # }}}
+attach_disk() # {{{
+{
+  local -i partno=0
+  local spec mp
+  local -a parts mounts
+  for spec in "${(@)slices}"; do
+    (( partno += 1 ))
+    parts=("${(@s.:.)spec}")
+    mp=$parts[1]
+    [[ -z $mp ]] && continue
+    mounts[partno]=$mp:$partno
+  done
+  for spec in ${(o)mounts[@]}; do
+    mp=${spec%:*}
+    partno=${spec#*:}
+    mkdir -p $destdir$mp
+    mount $disk$partno $destdir$mp
+  done
+} # }}}
+install_packages() # {{{
+{
+  pacstrap $destdir ${=software:-base syslinux}
+} # }}}
+find_partition() # {{{
+{
+  local mp=${1?} spec
+  local -i i=0
+  for spec in "${(@)slices}"; do
+    (( i += 1 ))
+    if [[ $mp = ${spec%%:*} ]]; then
+      print $i
+      return
+    fi
+  done
+  return 1
+} # }}}
+setup_syslinux() # {{{
+{
+  local rootp="$(find_partition /)"
+  mkdir -p $destdir$sysli
+  case $disklabel in
+  gpt) setup_syslinux_gpt ;;
+  msdos) setup_syslinux_msdos ;;
+  esac
+} # }}}
+setup_syslinux_gpt() # {{{
+{
+  cp -r $destdir/usr/lib/syslinux/efi64/* $destdir$sysli
+  cat > $destdir$sysli/syslinux.cfg <<SYSLICFG
+    ui menu.c32
+    default arch
+    label arch
+      linux ../../vmlinuz-linux
+      initrd ../../initramfs-linux.img
+      append root=$disk$rootp rw
+SYSLICFG
+  local bootp="$(find_partition /boot)"
+  efibootmgr -c -d $disk -p $bootp -l ${sysli#/boot}/syslinux.efi -L ${sysli:t}
+} # }}}
+setup_syslinux_msdos() # {{{
+{
+  cp -r $destdir/usr/lib/syslinux/bios/* $destdir$sysli
+  mv $destdir/boot/syslinux/syslinux.cfg $destdir$sysli/syslinux.cfg
+  rmdir $destdir/boot/syslinux
+  print extlinux --install $sysli | chrooted
+} # }}}
+configure() # {{{
+{
+  genfstab -U -p $destdir >> $destdir/etc/fstab
+
+  print $hostname > $destdir/etc/hostname
+
+  sed -rn 's/^#('$locale')/\1/p' \
+    < $destdir/etc/locale.gen \
+    > /tmp/locale.gen \
+    && mv /tmp/locale.gen $destdir/etc/locale.gen
+  print "LANG=$locale" > $destdir/etc/locale.conf
+
+  ln -s $tzfile $destdir/etc/localtime
+} # }}}
+detach_disk() # {{{
+{
+  if is_mounted $destdir; then
+    umount -R $destdir || fuser -Mm $destdir
+  fi
+} # }}}
+is_mounted() # {{{
+{
+  local mountp=${1:?}
+  awk -v ex=1 -v d=$mountp '$2 == d { ex=0; } END { exit ex; }' < /proc/mounts
+} # }}}
+cleanup() # {{{
+{
+  say abort >&2
+  detach_disk
+  exit ${1:-1}
+} # }}}
+chrooted() # {{{
+(
+  arch-chroot $destdir /bin/sh
+) # }}}
+ask() # {{{
+{
+  local question=${1?} replyp=${2?} reply=n
+  local rv=1
+  while :; do
+    printf "$_SELF: %s [y/n] " $question
+    read reply; rv=$?
+    case $reply in
+    [Yy]) reply=y ;;
+    [Nn]) reply=n ;;
+    *) continue ;;
+    esac
+    break
+  done
+  eval ${replyp}=$reply
+  if [[ $rv -gt 0 ]]; then
+    eval ${replyp}=n
+  fi
+  return $rv
+} # }}}
+abort() # {{{
+{
+  local -i ex=$1; shift
+  say "$@" >&2
+  exit $ex
+} # }}}
+say() # {{{
+{
+  printf "$_SELF: %s\n" "$@"
+} # }}}
+debuglog() # {{{
+{
+  print "$@"
+} >&2 # }}}
+
+print_usage() # {{{
+{
+  say "usage: $(print_section HELP | sed -n '/SYNOPSIS/{n;s/^ *//p;q}')" >&2
+} # }}}
+
+print_section() # {{{
+{
+  local -r s="${1?}"
+  sed -rne '/^### '$s' START/,/^### '$s' END/{s/\$0/'$_SELF'/;s/^#( |$)//p;}' ${_ABS0?}
+} # }}}
+print_help() # {{{
+{
+  print_section HELP | $PAGER
+} # }}}
+print_example() # {{{
+{
+  print_section EXAMPLE | $PAGER
+} # }}}
+
+yesno() # {{{
+{
+  if [[ ${1?} -eq 0 ]]; then
+    print yes
+  else
+    print no
+  fi
+} # }}}
+report() # {{{
+{
+  local cfgfmt=' %-14s : %s\n'
+  local slicefmt=' %-10s %-8s %-5s %-8s %s\n'
+
+  print requested configuration
+  printf $cfgfmt \
+    hostname $hostname \
+    timezone $timezone \
+    'target device' $disk \
+    disklabel $disklabel \
+
+  local -i i=0
+  printf ' slices:\n'
+  printf " %3s $slicefmt" nr mountpoint fs newfs size flags
+  for spec in "${(@)slices}"; do
+  print "${(@s.:.q-)spec}" | read mp name size fs newfs flags
+    printf " %3d $slicefmt" $((++i)) "${${(Q)mp}:--}" "$fs" "$newfs" "$size" "$flags"
+  done
+  print
+
+  local currdisklabel="$(parted -ms $disk unit MiB print | sed s/MiB//g)"
+  local diskinfo="${${(f)currdisklabel}[2]}"
+  local currdltype="${${(@s.:.)diskinfo}[6]}"
+
+  print current setup
+  printf $cfgfmt \
+    UEFI-enabled $(is_mounted $efivarsp; yesno $?) \
+    disklabel $currdltype
+
+  printf ' slices:\n'
+  printf " %3s $slicefmt" nr mountpoint fs newfs size flags
+  for spec in "${(@)${(f)currdisklabel}[3,-1]}"; do
+    print "${(@s.:.q-)spec}" | read i start end size fs unused flags
+    fs="${(Q)fs}"
+    fs="${${${fs:-unknown}:#linux-swap*}:-swap}"
+    flags="${${(Q)flags}%;}"
+    flags="${(j:,:)${(@s:, :)flags}}"
+    printf " %3d $slicefmt" $i - "$fs" - "$size" "$flags"
+  done
+  print
+} # }}}
+
+declare -a slices
+local -r efivarsp=/sys/firmware/efi/efivars
+
+if [[ $# -eq 0 ]]; then
+  print_usage
+  exit 1
+fi
+
+: ${PAGER:=less}
+
+if [[ $1 == -h || $1 == --help ]]; then
+  print_help
+  exit 0
+fi
+
+if [[ $1 == --example ]]; then
+  print_example
+  exit 0
+fi
+
+local -r configfile=${1?}
+source $configfile
+
+: ${disk:?}
+: ${disklabel:?}
+: ${slices:?}
+: ${hostname:?}
+: ${timezone:?}
+: ${destdir:=$(mktemp -d)}
+: ${destdir:?}
+
+local -r tzfile=/usr/share/zoneinfo/$timezone
+
+report
+
+case $disklabel in
+gpt)
+  if ! is_mounted $efivarsp; then
+    abort 1 "disklabel=gpt requires a UEFI-enabled system"
+  fi
+  ;;
+msdos)
+  ;;
+*)
+  abort 1 "unsupported value disklabel=$disklabel"
+  ;;
+esac
+
+if [[ ! -e $tzfile ]]; then
+  abort 1 "timezone file $tzfile not found"
+fi
+
+local -r sysli=$(
+  case $disklabel in
+  (gpt) print /boot/EFI/syslinux ;;
+  (msdos) print /boot/MBR/syslinux ;;
+  esac
+)
+
+setup_disk
+
+trap 'cleanup 2' HUP INT TERM
+
+attach_disk
+install_packages
+configure
+setup_syslinux
+hwclock --systohc --utc
+
+detach_disk
+
+print DONE
