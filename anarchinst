@@ -152,8 +152,30 @@
 # # syslinux is required
 # software=(
 #   base
+#   btrfs-progs
 #   syslinux
+#   # dialog is necessary for wifi-menu
 #   dialog wpa_supplicant
+#   curl w3m wget
+#   getmail irssi mutt vim tmux zsh
+#   clang gcc llvm
+#   nodejs python python2
+#   firefox
+#   xmms2
+#   # i3-wm install bombs, signature not trusted or some such
+#   openbox
+#   rxvt-unicode
+#   libarchive
+#   xf86-input-{evdev,keyboard,mouse,synaptics,vmmouse,void}
+#   xf86-video-{fbdev,intel,modesetting,vesa}
+#   xorg-server{,-common}
+#   xorg-{setxkbmap,xkbcomp,xkbevd,xkbutils}
+#   xorg-{xdpyinfo,xdriinfo,xev}
+#   xorg-{xinit,xinput,xmodmap,xrandr,xrdb}
+#   xorg-{xset,xsetroot}
+#   # these are in AUR (= no binary packages)
+#   #courier-maildrop
+#   #pure
 # )
 #
 # # target filesystems will be mounted under this directory
