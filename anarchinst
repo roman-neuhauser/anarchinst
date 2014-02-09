@@ -514,11 +514,11 @@ setup_disk
 
 trap 'cleanup 2' HUP INT TERM
 
-attach_disk
-install_packages
-configure
-setup_syslinux
-hwclock --systohc --utc
+   attach_disk \
+&& install_packages \
+&& configure \
+&& setup_syslinux \
+&& hwclock --systohc --utc
 
 detach_disk
 
