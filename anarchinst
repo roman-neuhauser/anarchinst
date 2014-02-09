@@ -191,6 +191,46 @@
 # #destdir=/mnt
 ### EXAMPLE END # }}}
 
+### SYSLINUX.CFG START # {{{
+# UI menu.c32
+#
+# MENU COLOR screen       0;37;40
+# MENU COLOR border       0;30
+# MENU COLOR title        0;30;43
+# MENU COLOR sel          0;30;47
+# MENU COLOR unsel        0;37;40
+# MENU COLOR tabmsg       0;33
+#
+# MENU TITLE ${hostname}
+#
+# DEFAULT arch
+# TIMEOUT 30
+#
+# LABEL arch
+#     MENU LABEL Arch Linux
+#     LINUX /vmlinuz-linux
+#     APPEND root=${rootdev} rw
+#     INITRD /initramfs-linux.img
+#
+# LABEL archfallback
+#     MENU LABEL Arch Linux Fallback
+#     LINUX /vmlinuz-linux
+#     APPEND root=${rootdev} rw
+#     INITRD /initramfs-linux-fallback.img
+#
+# LABEL hdt
+#         MENU LABEL HDT (Hardware Detection Tool)
+#         COM32 hdt.c32
+#
+# LABEL reboot
+#         MENU LABEL Reboot
+#         COM32 reboot.c32
+#
+# LABEL poweroff
+#         MENU LABEL Poweroff
+#         COM32 poweroff.c32
+### SYSLINUX.CFG END # }}}
+
 _SELF=${0:t}
 _ABS0=$0
 
@@ -290,34 +330,30 @@ find_partition() # {{{
 } # }}}
 setup_syslinux() # {{{
 {
-  local rootp="$(find_partition /)"
   mkdir -p $destdir$sysli
   case $disklabel in
   gpt) setup_syslinux_gpt ;;
   msdos) setup_syslinux_msdos ;;
   esac
+  generate_syslinux_cfg > $destdir$sysli/syslinux.cfg
 } # }}}
 setup_syslinux_gpt() # {{{
 {
   cp -r $destdir/usr/lib/syslinux/efi64/* $destdir$sysli
-  cat > $destdir$sysli/syslinux.cfg <<SYSLICFG
-    ui menu.c32
-    default arch
-    label arch
-      linux /vmlinuz-linux
-      initrd /initramfs-linux.img
-      append root=$disk$rootp rw
-SYSLICFG
   local bootp="$(find_partition /boot)"
   efibootmgr -c -d $disk -p $bootp -l ${sysli#/boot}/syslinux.efi -L ${sysli:t}
 } # }}}
 setup_syslinux_msdos() # {{{
 {
   cp -r $destdir/usr/lib/syslinux/bios/* $destdir$sysli
-  mv $destdir/boot/syslinux/syslinux.cfg $destdir$sysli/syslinux.cfg
-  sed -i 's!\.\./!/!' $destdir$sysli/syslinux.cfg
-  rmdir $destdir/boot/syslinux
   print extlinux --install $sysli | chrooted
+} # }}}
+generate_syslinux_cfg() # {{{
+{
+  local rootdev="$disk$(find_partition /)"
+  print_section SYSLINUX.CFG \
+  | sed -re 's/\$\{hostname\}/'$hostname'/' \
+        -e s,'\$\{rootdev\}',$rootdev,
 } # }}}
 configure() # {{{
 {
