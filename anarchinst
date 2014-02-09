@@ -181,7 +181,7 @@
 # # target filesystems will be mounted under this directory
 # # during installation
 # # optional, defaults to the result of `mktemp -d`
-# destdir=/mnt
+# #destdir=/mnt
 ### EXAMPLE END # }}}
 
 _SELF=${0:t}
