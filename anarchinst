@@ -143,9 +143,9 @@
 # # - run mkfs? (y/n)
 # # - slice flags (see parted(8))
 # slices=(
-#   /boot:beaut:512:ext3:y:boot,legacy_boot
-#   :schwab:10240:swap
-#   /:riot:-:btrfs:y
+#   /boot:toob:512:ext3:y:boot,legacy_boot
+#   :paws:10240:swap
+#   /:toor:-:btrfs:y
 # )
 #
 # # an array of pacman(8) "targets" (packages and groups)
