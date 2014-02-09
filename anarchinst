@@ -49,8 +49,7 @@
 #     Supported on both UEFI and BIOS systems.  `/boot` needs not
 #     be a separate slice, but SYSLINUX is reported to break btrfs
 #     volumes if installed into that.  Other filesystem types should
-#     be ok.  $0 installs SYSLINUX under `/boot/MBR/syslinux`
-#     (for symmetry with the EFI case).
+#     be ok.  $0 installs SYSLINUX under `/boot/syslinux`.
 #
 # OPTIONS
 #   -h, --help
@@ -275,8 +274,8 @@ setup_syslinux_gpt() # {{{
     ui menu.c32
     default arch
     label arch
-      linux ../../vmlinuz-linux
-      initrd ../../initramfs-linux.img
+      linux /vmlinuz-linux
+      initrd /initramfs-linux.img
       append root=$disk$rootp rw
 SYSLICFG
   local bootp="$(find_partition /boot)"
@@ -286,6 +285,7 @@ setup_syslinux_msdos() # {{{
 {
   cp -r $destdir/usr/lib/syslinux/bios/* $destdir$sysli
   mv $destdir/boot/syslinux/syslinux.cfg $destdir$sysli/syslinux.cfg
+  sed -i 's!\.\./!/!' $destdir$sysli/syslinux.cfg
   rmdir $destdir/boot/syslinux
   print extlinux --install $sysli | chrooted
 } # }}}
@@ -484,7 +484,7 @@ fi
 local -r sysli=$(
   case $disklabel in
   (gpt) print /boot/EFI/syslinux ;;
-  (msdos) print /boot/MBR/syslinux ;;
+  (msdos) print /boot/syslinux ;;
   esac
 )
 
