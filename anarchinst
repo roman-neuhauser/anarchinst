@@ -369,6 +369,13 @@ configure() # {{{
 
   ln -s $tzfile $destdir/etc/localtime
 } # }}}
+finalize() # {{{
+(
+  cat | chrooted <<FINALIZE
+    hwclock --systohc --utc
+    locale-gen
+FINALIZE
+) # }}}
 detach_disk() # {{{
 {
   if is_mounted $destdir; then
@@ -573,7 +580,7 @@ trap 'cleanup 2' HUP INT TERM
 && install_packages \
 && configure \
 && setup_syslinux \
-&& hwclock --systohc --utc
+&& finalize
 
 detach_disk
 
