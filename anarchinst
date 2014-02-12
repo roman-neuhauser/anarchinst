@@ -515,6 +515,12 @@ if [[ $1 == --example ]]; then
   exit 0
 fi
 
+local -i o_syslinux=0
+if [[ $1 == --syslinux ]]; then
+  o_syslinux=1
+  shift
+fi
+
 local -r configfile=${1?}
 source $configfile
 
@@ -525,6 +531,11 @@ source $configfile
 : ${timezone:?}
 : ${destdir:=$(mktemp -d)}
 : ${destdir:?}
+
+if (( o_syslinux )); then
+  generate_syslinux_cfg
+  exit 0
+fi
 
 local -r tzfile=/usr/share/zoneinfo/$timezone
 
