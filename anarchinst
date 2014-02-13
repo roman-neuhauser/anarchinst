@@ -287,6 +287,9 @@ mkpart() # {{{
   local mp=${3?} name=${4?} start=${5?} end=${6?} flags=${7?}
   local flag
   parted -ms -- $disk unit MiB mkpart primary $start $end
+  if [[ $disklabel == gpt ]]; then
+    parted -ms -- $disk name $partno $name
+  fi
   for flag in ${(s:,:)flags}; do
     parted -ms $disk set $partno $flag on
   done
