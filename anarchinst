@@ -164,11 +164,13 @@
 #   curl w3m wget
 #   getmail irssi mutt vim tmux zsh
 #   clang gcc llvm make
+#   gdb valgrind
 #   boost{,-libs}
 #   autoconf{,-archive} automake
 #   nodejs
 #   python{,2} pypy{,3} cython{,2} python{,2}-pip
 #   git tig mercurial subversion
+#   tcpdump wireshark-{cli,gtk}
 #   evince
 #   firefox
 #   xmms2
