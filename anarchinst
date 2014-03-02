@@ -378,7 +378,7 @@ configure() # {{{
 } # }}}
 finalize() # {{{
 (
-  cat | chrooted <<FINALIZE
+  chrooted <<FINALIZE
     hwclock --systohc --utc
     locale-gen
 FINALIZE
