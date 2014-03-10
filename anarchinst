@@ -175,8 +175,10 @@
 #   efibootmgr efivar
 #   # dialog is necessary for wifi-menu
 #   dialog wpa_supplicant wpa_actiond
+#   openssh
 #   curl w3m wget
 #   getmail irssi mutt vim tmux zsh
+#   multitail
 #   clang gcc llvm make
 #   gdb valgrind
 #   boost{,-libs}
@@ -191,6 +193,7 @@
 #   i3-wm i3lock i3status
 #   rxvt-unicode
 #   libarchive
+#   pulseaudio{,-alsa} ponymix
 #   xf86-input-{evdev,keyboard,mouse,synaptics,vmmouse,void}
 #   xf86-video-{fbdev,intel,modesetting,vesa}
 #   xorg-server{,-common}
