@@ -131,8 +131,11 @@
 # disk=/dev/sda
 #
 # # partition table type
-# # possible values: gpt, msdos
-# disklabel=msdos
+# # possible values: gpt, msdos, keep
+# # 'gpt', 'msdos' cause a new disklabel of the appropriate
+# # type to be created on $disk
+# # 'keep' keeps the disklabel already found on $disk
+# disklabel=gpt
 #
 # # slice, filesystem, mountpoint specifications
 # # each slice is a string of colon-separated atoms:
@@ -140,13 +143,24 @@
 # # - slice name (gpt-only)
 # # - slice size (unit = MiB)
 # # - filesystem (btrfs, ext{2,3,4}, fat)
+# # - create the partition? (y/n)
 # # - run mkfs? (y/n)
 # # - slice flags (see parted(8))
 # slices=(
-#   /boot:toob:512:ext3:y:boot,legacy_boot
-#   :paws:10240:swap
-#   /:toor:-:btrfs:y
+#   /boot:toob:512:fat:y:y:boot,legacy_boot
+#   :paws:10240:swap:y:y
+#   /:toor:-:btrfs:y:y
 # )
+#
+# # to keep your gpt disklabel and reformat everything
+# # but the 100G /home slice:
+# # disklabel=keep
+# # slices=(
+# #   /boot:toob:512:fat:y:y:boot
+# #   :paws:10240:swap:y:y
+# #   /home:home:1024000:btrfs:n:n
+# #   /:toor:-:btrfs:y:y
+# # )
 #
 # # an array of pacman(8) "targets" (packages and groups)
 # # - syslinux is required by $0
@@ -240,15 +254,18 @@ _ABS0=$0
 
 setup_disk() # {{{
 {
-  : ${disk?} ${disklabel?}
-  parted -ms $disk \
-    mklabel $disklabel
+  : ${disk?} ${disklabel?} ${keep_disklabel?}
+
+  if [[ $keep_disklabel == 0 ]]; then
+    parted -ms -- $disk mklabel $disklabel
+  fi
 
   local -a parts
   local -i start=0 end=0 partno=0
   local spec mp name fs newfs flags
+  local flag
   for spec in "${(@)slices}"; do
-  for mp name size fs newfs flags in "${(@s.:.)spec}"; do
+  for mp name size fs mkpart newfs flags in "${(@s.:.)spec}"; do
     (( start = end + 1 ))
     if [[ $size = - ]]; then
       (( end = -1 ))
@@ -256,14 +273,22 @@ setup_disk() # {{{
       (( end = start + size ))
     fi
     (( partno += 1 ))
-    mkpart $disk $partno "$mp" "$name" "$start" "$end" "$flags"
+    if [[ $mkpart == y ]]; then
+      parted -ms -- $disk unit MiB mkpart primary $start $end
+    fi
+    if [[ $disklabel == gpt ]]; then
+      parted -ms -- $disk name $partno $name
+    fi
+    for flag in ${(s:,:)flags}; do
+      parted -ms -- $disk set $partno $flag on
+    done
   done
   done
   parted -s $disk print
 
   partno=0
   for spec in "${(@)slices}"; do
-  for mp name size fs newfs flags in "${(@s.:.)spec}"; do
+  for mp name size fs mkpart newfs flags in "${(@s.:.)spec}"; do
     (( partno += 1 ))
     [[ $newfs = y ]] || continue
     mkfs_ $disk $partno $fs $name
@@ -284,19 +309,6 @@ mkfs_() # {{{
     opts="-f ${name:+-L$name}"
   esac
   mkfs -t $fs ${=opts} $dev
-} # }}}
-mkpart() # {{{
-{
-  local disk=${1?} partno=${2?}
-  local mp=${3?} name=${4?} start=${5?} end=${6?} flags=${7?}
-  local flag
-  parted -ms -- $disk unit MiB mkpart primary $start $end
-  if [[ $disklabel == gpt ]]; then
-    parted -ms -- $disk name $partno $name
-  fi
-  for flag in ${(s:,:)flags}; do
-    parted -ms $disk set $partno $flag on
-  done
 } # }}}
 attach_disk() # {{{
 {
@@ -487,10 +499,6 @@ report() # {{{
   done
   print
 
-  local currdisklabel="$(parted -ms $disk unit MiB print | sed s/MiB//g)"
-  local diskinfo="${${(f)currdisklabel}[2]}"
-  local currdltype="${${(@s.:.)diskinfo}[6]}"
-
   print current setup
   printf $cfgfmt \
     UEFI-enabled $(is_mounted $efivarsp; yesno $?) \
@@ -551,9 +559,22 @@ if (( o_syslinux )); then
   exit 0
 fi
 
+local -r currdisklabel="$(parted -ms -- $disk unit MiB print | sed s/MiB//g)"
+local -r diskinfo="${${(f)currdisklabel}[2]}"
+local -r currdltype="${${(@s.:.)diskinfo}[6]}"
+
 local -r tzfile=/usr/share/zoneinfo/$timezone
 
 report
+
+keep_disklabel=0
+
+case $disklabel in
+keep)
+  disklabel=$currdltype
+  keep_disklabel=1
+  ;;
+esac
 
 case $disklabel in
 gpt)
