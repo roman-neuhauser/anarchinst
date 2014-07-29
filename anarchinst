@@ -209,7 +209,7 @@
 #   xf86-video-{fbdev,intel,modesetting,vesa}
 #   xorg-server{,-common}
 #   xorg-{setxkbmap,xkbcomp,xkbevd,xkbutils}
-#   xorg-{xdpyinfo,xdriinfo,xev}
+#   xorg-{xdpyinfo,xdriinfo,xev,xwd}
 #   xorg-{xinit,xinput,xmodmap,xrandr,xrdb}
 #   xorg-{xset,xsetroot}
 #   xsel
