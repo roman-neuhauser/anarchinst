@@ -1,28 +1,31 @@
-NAME
-  anarchinst - non-interactive installer for ArchLinux
+.. vim: ft=rst sts=2 sw=2 tw=82
+.. default-role:: literal
 
-SYNOPSIS
+**NAME**
+  **anarchinst** - non-interactive installer for **ArchLinux**
+
+**SYNOPSIS**
+
+::
+
   anarchinst --help | --example | <configfile>
 
-DESCRIPTION
-  anarchinst is a non-interactive installer for `ArchLinux`_
+**DESCRIPTION**
+  *anarchinst* is a non-interactive installer for `ArchLinux`_
   meant to be run from the ArchLinux live DVD.  It is driven by
   a configuration file using `Zsh`_ syntax.  A commented example
   configuration is available by running `anarchinst --example`.
 
-.. _`ArchLinux`: https://www.archlinux.org
-.. _`Zsh`: http://zsh.sf.net
-
-  anarchinst is suitable for the simple scenario of installing over
+  *anarchinst* is suitable for the simple scenario of installing over
   a single harddisk in either (legacy) BIOS or (modern, cough), UEFI
   systems.
 
-  When run with a <configfile> argument, anarchinst will first report
+  When run with a `<configfile>` argument, *anarchinst* will first report
   the requested and current configuration of the underlying system.
-  If it finds any errors in <configfile> or incompatibilities
-  with the system in question, anarchinst will abort.
+  If it finds any errors in `<configfile>` or incompatibilities
+  with the system in question, *anarchinst* will abort.
 
-  When the configuration has been validated, anarchinst will
+  When the configuration has been validated, *anarchinst* will
 
   * (optionally) overwrite the disklabel on `$disk`
   * (optionally) create slices in the disklabel
@@ -36,35 +39,38 @@ DESCRIPTION
   If all goes well you were lucky and should have an ArchLinux
   system installed on `$disk`.
 
-Disklabels
-  anarchinst supports two kinds of disklabels: `gpt` and `msdos`.
+.. _`ArchLinux`: https://www.archlinux.org
+.. _`Zsh`: http://zsh.sf.net
+
+**Disklabels**
+  *anarchinst* supports two kinds of disklabels: `gpt` and `msdos`.
 
   :gpt:
     Only supported on UEFI systems.  Make sure `$slices`
     specifies a separate slice for `/boot`, and that it's `fat`;
     this is the so called ESP, EFI System Partition.
-    anarchinst installs SYSLINUX under `/boot/EFI/syslinux`.
+    *anarchinst* installs SYSLINUX under `/boot/EFI/syslinux`.
 
   :msdos:
     Supported on both UEFI and BIOS systems.  `/boot` needs not
     be a separate slice, but SYSLINUX is reported to break btrfs
     volumes if installed into that.  Other filesystem types should
-    be ok.  anarchinst installs SYSLINUX under `/boot/MBR/syslinux`
+    be ok.  *anarchinst* installs SYSLINUX under `/boot/MBR/syslinux`
     (for symmetry with the EFI case).
 
   :keep:
     Supported on both UEFI and BIOS systems.
     Keeps existing disklabel, whether it's `gpt` or `msdos`.
 
-OPTIONS
+**OPTIONS**
   -h, --help
     print this message and quit
 
   --example
     print an example configuration and quit
 
-ASSUMPTIONS
-  anarchinst makes several assumptions, make sure they hold before
+**ASSUMPTIONS**
+  *anarchinst* makes several assumptions, make sure they hold before
   using this tool:
 
   * you don't mind obliterating the contents of the target device
@@ -72,35 +78,36 @@ ASSUMPTIONS
     (ie. only x86, x64; is there eg. ArchLinux/powerpc64 at all?)
   * the hardware (BIOS) clock is set to UTC
 
-TERMINOLOGY
+**TERMINOLOGY**
   :disklabel:
     also partition table
 
   :slice:
     also partition
 
-ENVIRONMENT
-  anarchinst itself uses no environment variables.  It is, however,
+**ENVIRONMENT**
+  *anarchinst* itself uses no environment variables.  It is, however,
   implemented in terms of third-party commands which do use them.
-  This means that anarchinst may be influenced by environment
+  This means that *anarchinst* may be influenced by environment
   variables used by the commands listed in the SEE ALSO section,
-  possibly others.  When in doubt, try using anarchinst under `env -i`.
+  possibly others.
+  When in doubt, try using *anarchinst* under `env -i`.
 
-SEE ALSO
+**SEE ALSO**
   extlinux(1), syslinux(1), btrfs(8), efibootmgr(8), mkfs(8),
   mkswap(8), parted(8).
 
-CONFORMING TO
+**CONFORMING TO**
   Its own whims only.
 
-HISTORY
-  anarchinst first appeared out of nowhere.
+**HISTORY**
+  *anarchinst* first appeared out of nowhere.
 
-AUTHORS
+**AUTHORS**
   Roman Neuhauser <neuhauser@sigpipe.cz>
 
-BUGS
-  In the best GNU/Linux tradition, anarchinst has no bugs at all,
+**BUGS**
+  In the best GNU/Linux tradition, *anarchinst* has no bugs at all,
   only incompatible interfaces and conflicting implementations.
   If it breaks you can keep the pieces.
 
