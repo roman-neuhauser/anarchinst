@@ -387,8 +387,8 @@ generate_syslinux_cfg() # {{{
 {
   local rootdev="$disk$(find_partition /)"
   print_section SYSLINUX.CFG \
-  | sed -re 's/\$\{hostname\}/'$hostname'/' \
-        -e s,'\$\{rootdev\}',$rootdev,
+  | sed -re 's,\$\{hostname\},'$hostname, \
+         -e 's,\$\{rootdev\},'$rootdev,
 } # }}}
 configure() # {{{
 {
@@ -469,13 +469,28 @@ debuglog() # {{{
 
 print_usage() # {{{
 {
-  say "usage: $(print_section HELP | sed -n '/SYNOPSIS/{n;s/^ *//p;q}')" >&2
+  local synopsis="$(
+    print_section HELP \
+    | sed -n '
+      /SYNOPSIS/ {
+        n
+        s/^ *//
+        p
+        q
+      }'
+  )"
+  say "usage: $synopsis" >&2
 } # }}}
 
 print_section() # {{{
 {
   local -r s="${1?}"
-  sed -rne '/^### '$s' START/,/^### '$s' END/{s/\$0/'$_SELF'/;s/^#( |$)//p;}' ${_ABS0?}
+  sed -rnf - ${_ABS0?} <<EOSED
+    /^### $s START/,/^### $s END/ {
+      s/\\\$0/$_SELF/
+      s/^#( |\$)//p
+    }
+EOSED
 } # }}}
 print_help() # {{{
 {
