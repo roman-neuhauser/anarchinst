@@ -163,15 +163,13 @@
 # # )
 #
 # # an array of pacman(8) "targets" (packages and groups)
-# # - syslinux is required by $0
-# # - base is expected everywhere
-# # - base-devel is necessary for makepkg (provided by pacman),
-# #   which in turn is necessary to build stuff from AUR
 # software=(
-#   base base-devel
+#   base # expected everywhere
+#   base-devel # necessary for makepkg (provided by pacman),
+#              # which in turn is necessary to for AUR
 #   parted
 #   btrfs-progs
-#   syslinux
+#   syslinux # required by $0
 #   efibootmgr efivar
 #   # dialog is necessary for wifi-menu
 #   dialog wpa_supplicant wpa_actiond
