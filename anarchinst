@@ -507,6 +507,34 @@ print_example() # {{{
 {
   print_section EXAMPLE | $PAGER
 } # }}}
+print_readme() # {{{
+{
+  print '.. vim: ft=rst sts=2 sw=2 tw=82'
+  print '.. default-role:: literal'
+  print
+  print_section HELP \
+  | sed -re '
+      /^NAME/,+1 {
+        s/anarchinst/**&**/
+        s/ArchLinux/**&**/
+      }
+
+      /^SYNOPSIS/ {
+        a\
+
+        a\
+::\
+
+      }
+
+      /^DESCRIPTION/,$ {
+        s/(^| )(anarchinst)\>/ *\2*/g
+        s/<configfile>/`&`/g
+      }
+
+      s/^[[:upper:]].*$/**&**/
+    '
+} # }}}
 
 yesno() # {{{
 {
@@ -567,6 +595,11 @@ fi
 
 if [[ $1 == -h || $1 == --help ]]; then
   print_help
+  exit 0
+fi
+
+if [[ $1 == --readme ]]; then
+  print_readme
   exit 0
 fi
 
