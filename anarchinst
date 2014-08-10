@@ -194,6 +194,7 @@
 #   dialog wpa_supplicant wpa_actiond
 #
 # # still basics
+#   apg
 #   nfs-utils
 #   openssh openvpn
 #   openbsd-netcat # also optional for libvirt
@@ -205,7 +206,7 @@
 #   p7zip pkgfile yaourt
 #
 # # command line tools for ftp, http, email, etc
-#   curl rsync rtorrent w3m wget
+#   aria2 curl rsync rtorrent w3m wget
 #   getmail irssi mutt
 #
 # # SCM and related
@@ -227,16 +228,22 @@
 #
 # # interpreters
 #   nodejs
+#   ipython{,2}
 #   python{,2} pypy{,3} cython{,2} python{,2}-pip
 #   python{,2}-docutils
 #   ruby{,-docs}
 #
 # # virtualization
-#   qemu libvirt
+#   dnsmasq libvirt qemu
 #
+# # other
+#   rpm-org # unexpressed dependency of osc
 # # audio
 #   pulseaudio{,-alsa} ponymix
 #   xmms2
+#
+# # image viewer
+#   qiv
 #
 # # PDF and PostScript viewer
 #   zathura-{djvu,pdf-mupdf,ps}
