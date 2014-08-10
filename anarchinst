@@ -29,7 +29,7 @@
 #   * (optionally) create slices in the disklabel
 #   * (optionally) create filesystems in the new slices
 #   * mount the filesystems under `$destdir`
-#   * install `$packages` under `$destdir`
+#   * install `$software` under `$destdir`
 #   * configure the tree under `$destdir` for `$hostname`,
 #     `$locale`, `$timezone`
 #   * unmount the `$destdir` tree
