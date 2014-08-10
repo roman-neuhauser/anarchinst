@@ -433,7 +433,7 @@ setup_syslinux_gpt() # {{{
 setup_syslinux_msdos() # {{{
 {
   cp -r $destdir/usr/lib/syslinux/bios/* $destdir$sysli
-  print extlinux --install $sysli | chrooted
+  arch-chroot $destdir extlinux --install $sysli
 } # }}}
 generate_syslinux_cfg() # {{{
 {
@@ -458,10 +458,8 @@ configure() # {{{
 } # }}}
 finalize() # {{{
 (
-  chrooted <<FINALIZE
-    hwclock --systohc --utc
-    locale-gen
-FINALIZE
+  arch-chroot $destdir hwclock --systohc --utc
+  arch-chroot $destdir locale-gen
 ) # }}}
 detach_disk() # {{{
 {
@@ -475,10 +473,6 @@ cleanup() # {{{
   detach_disk
   exit ${1:-1}
 } # }}}
-chrooted() # {{{
-(
-  arch-chroot $destdir /bin/sh
-) # }}}
 ask() # {{{
 {
   local question=${1?} replyp=${2?} reply=n
