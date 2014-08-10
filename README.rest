@@ -55,8 +55,7 @@
     Supported on both UEFI and BIOS systems.  `/boot` needs not
     be a separate slice, but SYSLINUX is reported to break btrfs
     volumes if installed into that.  Other filesystem types should
-    be ok.  *anarchinst* installs SYSLINUX under `/boot/MBR/syslinux`
-    (for symmetry with the EFI case).
+    be ok.  *anarchinst* installs SYSLINUX under `/boot/syslinux`.
 
   :keep:
     Supported on both UEFI and BIOS systems.
@@ -74,8 +73,7 @@
   using this tool:
 
   * you don't mind obliterating the contents of the target device
-  * you want to use Syslinux, and it works on your platform
-    (ie. only x86, x64; is there eg. ArchLinux/powerpc64 at all?)
+  * you want to use Syslinux
   * the hardware (BIOS) clock is set to UTC
 
 **TERMINOLOGY**
