@@ -63,10 +63,10 @@
 
 **OPTIONS**
   -h, --help
-    print this message and quit
+    print this message and exit
 
   --example
-    print an example configuration and quit
+    print an example configuration and exit
 
 **ASSUMPTIONS**
   *anarchinst* makes several assumptions, make sure they hold before
