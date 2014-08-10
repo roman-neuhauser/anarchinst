@@ -92,7 +92,7 @@
 #   When in doubt, try using $0 under `env -i`.
 #
 # SEE ALSO
-#   extlinux(1), syslinux(1), btrfs(8), efibootmgr(8), mkfs(8),
+#   extlinux(1), syslinux(1), zsh(1), btrfs(8), efibootmgr(8), mkfs(8),
 #   mkswap(8), parted(8).
 #
 # CONFORMING TO
