@@ -170,48 +170,88 @@
 # #   /:toor:-:btrfs:y:y
 # # )
 #
+# # target filesystems will be mounted under this directory
+# # during installation
+# # optional, defaults to the result of `mktemp -d`
+# #destdir=/mnt
+#
 # # an array of pacman(8) "targets" (packages and groups)
+# #
+# # this particular selection reflects choices and occupations
+# # of anarchinst's author: this is what i have on my laptop.
 # software=(
+# # absolute basics
 #   base # expected everywhere
-#   base-devel # necessary for makepkg (provided by pacman),
-#              # which in turn is necessary to for AUR
 #   parted
-#   btrfs-progs
-#   syslinux # required by $0
-#   efibootmgr efivar
-#   # dialog is necessary for wifi-menu
+#   btrfs-progs # required for btrfs
+#   syslinux # used by $0
+#   efibootmgr efivar # required for EFI
+#   tcpdump
+#
+# # wifi
+#   # dialog is optional for netctl but necessary
+#   # for wifi-menu which comes with netctl
 #   dialog wpa_supplicant wpa_actiond
+#
+# # still basics
 #   nfs-utils
 #   openssh openvpn
-#   curl rsync rtorrent w3m wget
-#   getmail irssi mutt vim tmux zsh
-#   dash pdksh tcsh
-#   multitail
-#   clang gcc llvm make
-#   csope ctags
-#   gdb valgrind
+#   openbsd-netcat # also optional for libvirt
+#   vim tmux zsh
 #   htop lsof strace
-#   boost{,-libs}
-#   dejagnu
-#   doxygen
-#   autoconf{,-archive} automake
+#   multitail
+#
+# # useful
+#   p7zip pkgfile yaourt
+#
+# # command line tools for ftp, http, email, etc
+#   curl rsync rtorrent w3m wget
+#   getmail irssi mutt
+#
+# # SCM and related
+#   git tig mercurial bzr subversion
+#
+# # programming
+#   base-devel # auto{conf,make} binutils bison gcc libtool make etc
+#   autoconf-archive
 #   cmake scons tup waf
 #   swig
-#   pkgfile yaourt
+#   clang llvm
+#   dash pdksh tcsh
+#   csope ctags
+#   ddd gdb pydb valgrind
+#   boost{,-libs}
+#
+# # yast programming
+#   dejagnu doxygen
+#
+# # interpreters
 #   nodejs
 #   python{,2} pypy{,3} cython{,2} python{,2}-pip
-#   python-docutils
+#   python{,2}-docutils
 #   ruby{,-docs}
-#   git tig mercurial subversion
-#   tcpdump wireshark-{cli,gtk}
-#   evince
-#   firefox flashplugin
+#
+# # virtualization
+#   qemu libvirt
+#
+# # audio
+#   pulseaudio{,-alsa} ponymix
 #   xmms2
+#
+# # PDF and PostScript viewer
+#   zathura-{djvu,pdf-mupdf,ps}
+#
+# # browser
+#   firefox flashplugin
+#
+# # better tcpdump
+#   wireshark-{cli,gtk}
+#
+# # window manager + terminal
 #   i3-wm i3lock i3status
 #   rxvt-unicode
-#   libarchive p7zip
-#   qemu libvirt
-#   pulseaudio{,-alsa} ponymix
+#
+# # X server + basic tools
 #   xf86-input-{evdev,keyboard,mouse,synaptics,vmmouse,void}
 #   xf86-video-{fbdev,intel,modesetting,vesa}
 #   xorg-server{,-common}
@@ -220,15 +260,7 @@
 #   xorg-{xinit,xinput,xmodmap,xrandr,xrdb}
 #   xorg-{xset,xsetroot}
 #   xsel
-#   # these are in AUR (= no binary packages)
-#   #courier-maildrop
-#   #pure
 # )
-#
-# # target filesystems will be mounted under this directory
-# # during installation
-# # optional, defaults to the result of `mktemp -d`
-# #destdir=/mnt
 ### EXAMPLE END # }}}
 
 ### SYSLINUX.CFG START # {{{
