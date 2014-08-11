@@ -24,6 +24,9 @@
 #   with the system in question, $0 will abort.
 #
 #   When the configuration has been validated, $0 will
+#   generate `syslinux.cfg` and `doit.zsh`.  Review or even modify
+#   contents of either before proceding with `./doit.zsh`.
+#   The script will
 #
 #   * (optionally) overwrite the disklabel on `$disk`
 #   * (optionally) create slices in the disklabel
@@ -313,12 +316,17 @@
 _SELF=${0:t}
 _ABS0=$0
 
+record() # {{{
+{
+  print -u $tape -- "$@"
+} # }}}
+
 setup_disk() # {{{
 {
   : ${disk?} ${disklabel?} ${keep_disklabel?}
 
   if [[ $keep_disklabel == 0 ]]; then
-    parted -ms -- $disk mklabel $disklabel
+    record parted -ms -- \$disk mklabel $disklabel
   fi
 
   local -a parts
@@ -335,17 +343,17 @@ setup_disk() # {{{
     fi
     (( partno += 1 ))
     if [[ $mkpart == y ]]; then
-      parted -ms -- $disk unit MiB mkpart primary $start $end
+      record parted -ms -- \$disk unit MiB mkpart primary $start $end
     fi
     if [[ $disklabel == gpt ]]; then
-      parted -ms -- $disk name $partno $name
+      record parted -ms -- \$disk name $partno $name
     fi
     for flag in ${(s:,:)flags}; do
-      parted -ms -- $disk set $partno $flag on
+      record parted -ms -- \$disk set $partno $flag on
     done
   done
   done
-  parted -s $disk print
+  record parted -s \$disk print
 
   partno=0
   for spec in "${(@)slices}"; do
@@ -359,17 +367,17 @@ setup_disk() # {{{
 mkfs_() # {{{
 {
   local disk=${1?} partno=${2?} fs=${3?} name=${4?}
-  local dev=$disk$partno opts=
+  local dev='${disk}'$partno opts=
   case $fs in
   "")
     return 0 ;;
   swap)
-    mkswap $dev
+    record mkswap $dev
     return $? ;;
   btrfs)
     opts="-f ${name:+-L$name}"
   esac
-  mkfs -t $fs ${=opts} $dev
+  record mkfs -t $fs ${=opts} $dev
 } # }}}
 attach_disk() # {{{
 {
@@ -386,14 +394,14 @@ attach_disk() # {{{
   for spec in ${(o)mounts[@]}; do
     mp=${spec%:*}
     partno=${spec#*:}
-    mkdir -p $destdir$mp
-    mount $disk$partno $destdir$mp
+    record mkdir -p \$destdir$mp
+    record mount '${disk}'$partno \$destdir$mp
   done
 } # }}}
 install_packages() # {{{
 {
-  pacman-key --refresh-keys
-  pacstrap $destdir ${=software:-base syslinux}
+  record pacman-key --refresh-keys
+  record pacstrap \$destdir ${=software:-base syslinux}
 } # }}}
 find_partition() # {{{
 {
@@ -417,27 +425,27 @@ setup_syslinux() # {{{
     esac
   )
 
-  mkdir -p $destdir$sysli
+  record mkdir -p \$destdir$sysli
   case $disklabel in
   gpt) setup_syslinux_gpt ;;
   msdos) setup_syslinux_msdos ;;
   esac
-  generate_syslinux_cfg > $destdir$sysli/syslinux.cfg
+  generate_syslinux_cfg > syslinux.cfg
+  record cp \${0:h}/syslinux.cfg \$destdir$sysli/
 } # }}}
 setup_syslinux_gpt() # {{{
 {
-  cp -r $destdir/usr/lib/syslinux/efi64/* $destdir$sysli
-  local bootp="$(find_partition /boot)"
-  efibootmgr --create \
-    --disk $disk \
-    --part $bootp \
+  record cp -r \$destdir/usr/lib/syslinux/efi64/\* \$destdir$sysli
+  record efibootmgr --create \
+    --disk \$disk \
+    --part "$(find_partition /boot)" \
     --loader ${sysli#/boot}/syslinux.efi \
     --label ${sysli:t}
 } # }}}
 setup_syslinux_msdos() # {{{
 {
-  cp -r $destdir/usr/lib/syslinux/bios/* $destdir$sysli
-  arch-chroot $destdir extlinux --install $sysli
+  record cp -r \$destdir/usr/lib/syslinux/bios/\* \$destdir$sysli
+  record arch-chroot \$destdir extlinux --install $sysli
 } # }}}
 generate_syslinux_cfg() # {{{
 {
@@ -448,28 +456,22 @@ generate_syslinux_cfg() # {{{
 } # }}}
 configure() # {{{
 {
-  genfstab -U -p $destdir >> $destdir/etc/fstab
+  record genfstab -U -p \$destdir '>>' \$destdir/etc/fstab
 
-  print $hostname > $destdir/etc/hostname
+  record print \$hostname '>' \$destdir/etc/hostname
+  record print \$locale '>' \$destdir/etc/locale.gen
+  record print "LANG=\$locale" '>' \$destdir/etc/locale.conf
 
-  sed -rn 's/^#('$locale')/\1/p' \
-    < $destdir/etc/locale.gen \
-    > /tmp/locale.gen \
-    && mv /tmp/locale.gen $destdir/etc/locale.gen
-  print "LANG=$locale" > $destdir/etc/locale.conf
-
-  ln -s $tzfile $destdir/etc/localtime
+  record ln -s $tzfile \$destdir/etc/localtime
 } # }}}
 finalize() # {{{
 (
-  arch-chroot $destdir hwclock --systohc --utc
-  arch-chroot $destdir locale-gen
+  record arch-chroot \$destdir hwclock --systohc --utc
+  record arch-chroot \$destdir locale-gen
 ) # }}}
 detach_disk() # {{{
 {
-  if mountpoint -q $destdir; then
-    umount -R $destdir || fuser -Mm $destdir
-  fi
+  record umount -R \$destdir '||' fuser -Mm \$destdir
 } # }}}
 cleanup() # {{{
 {
@@ -660,7 +662,7 @@ source $configfile
 : ${slices:?}
 : ${hostname:?}
 : ${timezone:?}
-: ${destdir:=$(mktemp -d)}
+: ${destdir:='$(mktemp -d)'}
 : ${destdir:?}
 
 if (( o_syslinux )); then
@@ -702,6 +704,17 @@ if [[ ! -e $tzfile ]]; then
   abort 1 "timezone file $tzfile not found"
 fi
 
+declare -i tape
+local -r script=doit.zsh
+
+exec {tape} > $script
+print -u $tape '#!/usr/bin/env zsh'
+
+record local -r disk=$disk
+record local -r destdir=$destdir
+record local -r hostname=$hostname
+record local -r locale=$locale
+
 setup_disk
 
 trap 'cleanup 2' HUP INT TERM
@@ -713,5 +726,7 @@ trap 'cleanup 2' HUP INT TERM
 && finalize
 
 detach_disk
+
+chmod u+x $script
 
 print DONE

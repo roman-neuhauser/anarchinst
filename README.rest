@@ -26,6 +26,9 @@
   with the system in question, *anarchinst* will abort.
 
   When the configuration has been validated, *anarchinst* will
+  generate `syslinux.cfg` and `doit.zsh`.  Review or even modify
+  contents of either before proceding with `./doit.zsh`.
+  The script will
 
   * (optionally) overwrite the disklabel on `$disk`
   * (optionally) create slices in the disklabel
