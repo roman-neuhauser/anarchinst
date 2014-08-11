@@ -428,7 +428,11 @@ setup_syslinux_gpt() # {{{
 {
   cp -r $destdir/usr/lib/syslinux/efi64/* $destdir$sysli
   local bootp="$(find_partition /boot)"
-  efibootmgr -c -d $disk -p $bootp -l ${sysli#/boot}/syslinux.efi -L ${sysli:t}
+  efibootmgr --create \
+    --disk $disk \
+    --part $bootp \
+    --loader ${sysli#/boot}/syslinux.efi \
+    --label ${sysli:t}
 } # }}}
 setup_syslinux_msdos() # {{{
 {
