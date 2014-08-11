@@ -410,6 +410,13 @@ find_partition() # {{{
 } # }}}
 setup_syslinux() # {{{
 {
+  local -r sysli=$(
+    case $disklabel in
+    (gpt) print /boot/EFI/syslinux ;;
+    (msdos) print /boot/syslinux ;;
+    esac
+  )
+
   mkdir -p $destdir$sysli
   case $disklabel in
   gpt) setup_syslinux_gpt ;;
@@ -701,13 +708,6 @@ esac
 if [[ ! -e $tzfile ]]; then
   abort 1 "timezone file $tzfile not found"
 fi
-
-local -r sysli=$(
-  case $disklabel in
-  (gpt) print /boot/EFI/syslinux ;;
-  (msdos) print /boot/syslinux ;;
-  esac
-)
 
 setup_disk
 
