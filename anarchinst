@@ -465,14 +465,9 @@ FINALIZE
 ) # }}}
 detach_disk() # {{{
 {
-  if is_mounted $destdir; then
+  if mountpoint -q $destdir; then
     umount -R $destdir || fuser -Mm $destdir
   fi
-} # }}}
-is_mounted() # {{{
-{
-  local mountp=${1:?}
-  awk -v ex=1 -v d=$mountp '$2 == d { ex=0; } END { exit ex; }' < /proc/mounts
 } # }}}
 cleanup() # {{{
 {
@@ -612,7 +607,7 @@ report() # {{{
 
   print current setup
   printf $cfgfmt \
-    UEFI-enabled $(is_mounted $efivarsp; yesno $?) \
+    UEFI-enabled $(mountpoint -q $efivarsp; yesno $?) \
     disklabel $currdltype
 
   printf ' slices:\n'
@@ -694,7 +689,7 @@ esac
 
 case $disklabel in
 gpt)
-  if ! is_mounted $efivarsp; then
+  if ! mountpoint -q $efivarsp; then
     abort 1 "disklabel=gpt requires a UEFI-enabled system"
   fi
   ;;
