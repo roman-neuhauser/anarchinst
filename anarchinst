@@ -708,7 +708,10 @@ declare -i tape
 local -r script=doit.zsh
 
 exec {tape} > $script
-print -u $tape '#!/usr/bin/env zsh'
+record '#!/usr/bin/env zsh'
+
+record set -o errexit
+record set -o nounset
 
 record local -r disk=$disk
 record local -r destdir=$destdir
