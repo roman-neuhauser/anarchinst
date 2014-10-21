@@ -478,7 +478,7 @@ detach_disk() # {{{
 } # }}}
 cleanup() # {{{
 {
-  say abort >&2
+  say ABORT >&2
   detach_disk
   exit ${1:-1}
 } # }}}
@@ -739,10 +739,14 @@ trap 'cleanup 2' HUP INT TERM
 
 detach_disk
 
+exec {tape} >&-
 chmod u+x $script
 
 if (( o_immediate )); then
   $script || exit $?
+else
+  say "generated syslinux.cfg"
+  say "generated doit.zsh"
 fi
 
-print DONE
+say done
