@@ -8,7 +8,7 @@
 
 ::
 
-  anarchinst --help | --example | <configfile>
+  anarchinst --help | --example | [--immediate] <configfile>
 
 **DESCRIPTION**
   *anarchinst* is a non-interactive installer for `ArchLinux`_
@@ -70,6 +70,9 @@
 
   --example
     print an example configuration and exit
+
+  --immediate
+    run `doit.sh` immediately
 
 **ASSUMPTIONS**
   *anarchinst* makes several assumptions, make sure they hold before

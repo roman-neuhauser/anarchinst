@@ -6,7 +6,7 @@
 #   $0 - non-interactive installer for ArchLinux
 #
 # SYNOPSIS
-#   $0 --help | --example | <configfile>
+#   $0 --help | --example | [--immediate] <configfile>
 #
 # DESCRIPTION
 #   $0 is a non-interactive installer for `ArchLinux`_
@@ -68,6 +68,9 @@
 #
 #   --example
 #     print an example configuration and exit
+#
+#   --immediate
+#     run `doit.sh` immediately
 #
 # ASSUMPTIONS
 #   $0 makes several assumptions, make sure they hold before
@@ -654,6 +657,12 @@ if [[ $1 == --syslinux ]]; then
   shift
 fi
 
+local -i o_immediate=0
+if [[ $1 == --immediate ]]; then
+  o_immediate=1
+  shift
+fi
+
 local -r configfile=${1?}
 source $configfile
 
@@ -705,7 +714,7 @@ if [[ ! -e $tzfile ]]; then
 fi
 
 declare -i tape
-local -r script=doit.zsh
+local -r script=./doit.zsh
 
 exec {tape} > $script
 record '#!/usr/bin/env zsh'
@@ -731,5 +740,9 @@ trap 'cleanup 2' HUP INT TERM
 detach_disk
 
 chmod u+x $script
+
+if (( o_immediate )); then
+  $script || exit $?
+fi
 
 print DONE
