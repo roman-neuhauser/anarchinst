@@ -194,6 +194,9 @@
 #   efibootmgr efivar # required for EFI
 #   tcpdump
 #
+# # FIXME: intel-cpu specific
+#   intel-ucode
+#
 # # wifi
 #   # dialog is optional for netctl but necessary
 #   # for wifi-menu which comes with netctl
@@ -295,7 +298,7 @@
 #     MENU LABEL Arch Linux
 #     LINUX /vmlinuz-linux
 #     APPEND root=${rootdev} rw
-#     INITRD /initramfs-linux.img
+#     INITRD /intel-ucode.img,/initramfs-linux.img
 #
 # LABEL archfallback
 #     MENU LABEL Arch Linux Fallback
