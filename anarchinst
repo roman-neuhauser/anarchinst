@@ -324,6 +324,14 @@ record() # {{{
   print -u $tape -- "$@"
 } # }}}
 
+read_current_disklabel() # {{{
+{
+  local disk=${1?}
+  # parted -m prints "BYT;" on the first line
+  sudo parted -ms -- $disk unit MiB print \
+  | sed -n '2,$ { s/MiB//g; p; }'
+} # }}}
+
 setup_disk() # {{{
 {
   : ${disk?} ${disklabel?} ${keep_disklabel?}
@@ -615,7 +623,7 @@ report() # {{{
 
   printf ' slices:\n'
   printf " %3s $slicefmt" nr mountpoint fs newfs size flags
-  for spec in "${(@)${(f)currdisklabel}[3,-1]}"; do
+  for spec in "${(@)${(f)currdisklabel}[2,-1]}"; do
     print "${(@s.:.q-)spec}" | read i start end size fs unused flags
     fs="${(Q)fs}"
     fs="${${${fs:-unknown}:#linux-swap*}:-swap}"
@@ -626,7 +634,8 @@ report() # {{{
   print
 } # }}}
 
-declare -a slices
+local -a slices
+local currdisklabel
 local -r efivarsp=/sys/firmware/efi/efivars
 
 if [[ $# -eq 0 ]]; then
@@ -673,14 +682,15 @@ source $configfile
 : ${timezone:?}
 : ${destdir:='$(mktemp -d)'}
 : ${destdir:?}
+: ${currdisklabel:="$(read_current_disklabel $disk)"}
+: ${currdisklabel:?}
 
 if (( o_syslinux )); then
   generate_syslinux_cfg
   exit 0
 fi
 
-local -r currdisklabel="$(parted -ms -- $disk unit MiB print | sed s/MiB//g)"
-local -r diskinfo="${${(f)currdisklabel}[2]}"
+local -r diskinfo="${${(f)currdisklabel}[1]}"
 local -r currdltype="${${(@s.:.)diskinfo}[6]}"
 
 local -r tzfile=/usr/share/zoneinfo/$timezone
