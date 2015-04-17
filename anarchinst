@@ -228,7 +228,7 @@
 #   swig
 #   clang llvm
 #   dash pdksh tcsh
-#   csope ctags
+#   cscope ctags
 #   ddd gdb pydb valgrind
 #   boost{,-libs}
 #
