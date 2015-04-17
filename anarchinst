@@ -6,7 +6,9 @@
 #   $0 - non-interactive installer for ArchLinux
 #
 # SYNOPSIS
-#   $0 --help | --example | [--immediate] <configfile>
+#   $0 --help
+#   $0 --example
+#   $0 [--immediate] <configfile>
 #
 # DESCRIPTION
 #   $0 is a non-interactive installer for `ArchLinux`_
