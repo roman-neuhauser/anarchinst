@@ -133,7 +133,7 @@
 #
 # # locale used by the target system
 # # for possible values see /etc/locale.gen
-# locale=en_US.UTF-8
+# locale='en_US.UTF-8 UTF-8'
 #
 # # timezone used by the target system
 # # for possible values see /usr/share/zoneinfo/
@@ -474,7 +474,7 @@ configure() # {{{
 
   record print \$hostname '>' \$destdir/etc/hostname
   record print \$locale '>' \$destdir/etc/locale.gen
-  record print "LANG=\$locale" '>' \$destdir/etc/locale.conf
+  record print "LANG=\${locale% *}" '>' \$destdir/etc/locale.conf
 
   record ln -s $tzfile \$destdir/etc/localtime
 } # }}}
@@ -738,7 +738,7 @@ record set -o nounset
 record local -r disk=$disk
 record local -r destdir=$destdir
 record local -r hostname=$hostname
-record local -r locale=$locale
+record local -r locale=${(q-)locale}
 
 setup_disk
 
