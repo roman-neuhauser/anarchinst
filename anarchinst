@@ -212,7 +212,7 @@
 #   multitail
 #
 # # useful
-#   p7zip pkgfile yaourt
+#   p7zip pkgfile
 #
 # # command line tools for ftp, http, email, etc
 #   aria2 curl rsync rtorrent w3m wget
@@ -224,10 +224,10 @@
 # # programming
 #   base-devel # auto{conf,make} binutils bison gcc libtool make etc
 #   autoconf-archive
-#   cmake scons tup waf
+#   cmake scons tup
 #   swig
 #   clang llvm
-#   dash pdksh tcsh
+#   dash mksh tcsh
 #   cscope ctags
 #   ddd gdb pydb valgrind
 #   boost{,-libs}
@@ -245,8 +245,12 @@
 # # virtualization
 #   dnsmasq libvirt qemu
 #
-# # other
+# # openSUSE packaging
+#   # osc comes from openSUSE:Tools in OBS
+#   # rpm-org (normally in AUR) comes from home:roman-neuhauser in OBS
+#   osc
 #   rpm-org # unexpressed dependency of osc
+#
 # # audio
 #   pulseaudio{,-alsa} ponymix
 #   xmms2
