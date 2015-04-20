@@ -183,6 +183,25 @@
 # # optional, defaults to the result of `mktemp -d`
 # #destdir=/mnt
 #
+# # pacman(8) repositories
+# std_repos=(
+#   core
+#   extra
+#   community
+# )
+# custom_repos=(
+#   obs-home
+#   '[home_roman-neuhauser_Arch_Extra]
+#     SigLevel = Never
+#     Server = http://download.opensuse.org/repositories/home:/roman-neuhauser/Arch_Extra/$arch
+#   '
+#   opensuse-tools
+#   '[openSUSE_Tools_Arch_Extra]
+#     SigLevel = Never
+#     Server = http://download.opensuse.org/repositories/openSUSE:/Tools/Arch_Extra/$arch
+#   '
+# )
+#
 # # an array of pacman(8) "targets" (packages and groups)
 # #
 # # this particular selection reflects choices and occupations
@@ -418,9 +437,35 @@ attach_disk() # {{{
     record mount '${disk}'$partno \$destdir$mp
   done
 } # }}}
+setup_pkg_repos() # {{{
+{
+  local repo file contents
+  local -a repofiles
+  local -r pacmand=/etc/pacman.d
+  for repo in $std_repos; do
+    file=$repo.repo
+    print >$file -f '%s\n' \
+      "[$repo]" \
+      "Include = $pacmand/mirrorlist"
+    repofiles+=($file)
+  done
+  for repo contents in "${(@)custom_repos}"; do
+    file=$repo.repo
+    cat > $file <<<"$contents"
+    repofiles+=($file)
+  done
+
+  record pacman-key --refresh-keys
+  record mkdir -p \$destdir$pacmand
+  for file in $repofiles; do
+    record cp \${_ABS0:h}/$file \$destdir$pacmand/$file
+  done
+  for file in $repofiles; do
+    record print "Include = $pacmand/$file" '>>' \$destdir/etc/pacman.conf
+  done
+} # }}}
 install_packages() # {{{
 {
-  record pacman-key --refresh-keys
   record pacstrap \$destdir ${=software:-base syslinux}
 } # }}}
 find_partition() # {{{
@@ -752,6 +797,7 @@ setup_disk
 trap 'cleanup 2' HUP INT TERM
 
    attach_disk \
+&& setup_pkg_repos \
 && install_packages \
 && configure \
 && setup_syslinux \
