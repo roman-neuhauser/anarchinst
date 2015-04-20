@@ -495,11 +495,11 @@ setup_syslinux() # {{{
   )
 
   record mkdir -p \$destdir$sysli
+  record cp \${_ABS0:h}/syslinux.cfg \$destdir$sysli/
   case $disklabel in
   gpt) setup_syslinux_gpt ;;
   msdos) setup_syslinux_msdos ;;
   esac
-  record cp \${_ABS0:h}/syslinux.cfg \$destdir$sysli/
 } # }}}
 setup_syslinux_gpt() # {{{
 {
