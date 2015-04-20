@@ -522,7 +522,7 @@ generate_syslinux_cfg() # {{{
   | sed -re 's,\$\{hostname\},'$hostname, \
          -e 's,\$\{rootdev\},'$rootdev,
 } # }}}
-configure() # {{{
+finalize() # {{{
 {
   record genfstab -U -p \$destdir '>>' \$destdir/etc/fstab
 
@@ -531,12 +531,10 @@ configure() # {{{
   record print "LANG=\${locale% *}" '>' \$destdir/etc/locale.conf
 
   record ln -s $tzfile \$destdir/etc/localtime
-} # }}}
-finalize() # {{{
-(
+
   record arch-chroot \$destdir hwclock --systohc --utc
   record arch-chroot \$destdir locale-gen
-) # }}}
+} # }}}
 detach_disk() # {{{
 {
   record umount -R \$destdir '||' fuser -Mm \$destdir
@@ -802,7 +800,6 @@ trap 'cleanup 2' HUP INT TERM
    attach_disk \
 && setup_pkg_repos \
 && install_packages \
-&& configure \
 && setup_syslinux \
 && finalize
 
