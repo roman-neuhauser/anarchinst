@@ -483,6 +483,10 @@ find_partition() # {{{
 } # }}}
 setup_syslinux() # {{{
 {
+  if [[ ! -e syslinux.cfg ]]; then
+    generate_syslinux_cfg > syslinux.cfg
+  fi
+
   local -r sysli=$(
     case $disklabel in
     (gpt) print /boot/EFI/syslinux ;;
@@ -495,7 +499,6 @@ setup_syslinux() # {{{
   gpt) setup_syslinux_gpt ;;
   msdos) setup_syslinux_msdos ;;
   esac
-  generate_syslinux_cfg > syslinux.cfg
   record cp \${_ABS0:h}/syslinux.cfg \$destdir$sysli/
 } # }}}
 setup_syslinux_gpt() # {{{
