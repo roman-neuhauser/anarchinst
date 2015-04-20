@@ -451,7 +451,7 @@ setup_syslinux() # {{{
   msdos) setup_syslinux_msdos ;;
   esac
   generate_syslinux_cfg > syslinux.cfg
-  record cp \${0:h}/syslinux.cfg \$destdir$sysli/
+  record cp \${_ABS0:h}/syslinux.cfg \$destdir$sysli/
 } # }}}
 setup_syslinux_gpt() # {{{
 {
@@ -741,6 +741,7 @@ record '#!/usr/bin/env zsh'
 record set -o errexit
 record set -o nounset
 
+record local -r _ABS0=\${0:h}/$script
 record local -r disk=$disk
 record local -r destdir=$destdir
 record local -r hostname=$hostname
