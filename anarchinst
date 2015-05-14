@@ -124,6 +124,12 @@
 #   `wifi-menu` WORKSFORME.
 #
 #   Networking setup in the target system is also still coming.
+#   systemd-networkd(8) / wpa_supplicant(8) combination seems to
+#   be okayish for a laptop (though i'm getting major suckage from
+#   systemd-resolved after resuming the machine in the same wifi
+#   network it went to sleep in: /run/systemd/resolve/resolv.conf
+#   gets reset to some default state with Google-operated (!!!)
+#   name servers).
 #
 #   Patches are welcome at
 #   <https://github.com/roman-neuhauser/anarchinst/>.
@@ -219,9 +225,7 @@
 #   intel-ucode
 #
 # # wifi
-#   # dialog is optional for netctl but necessary
-#   # for wifi-menu which comes with netctl
-#   dialog wpa_supplicant wpa_actiond
+#   wpa_supplicant
 #
 # # still basics
 #   apg
