@@ -526,14 +526,15 @@ finalize() # {{{
 {
   record genfstab -U -p \$destdir '>>' \$destdir/etc/fstab
 
-  record print \$hostname '>' \$destdir/etc/hostname
-  record print \$locale '>' \$destdir/etc/locale.gen
-  record print "LANG=\${locale% *}" '>' \$destdir/etc/locale.conf
-
-  record ln -s $tzfile \$destdir/etc/localtime
+  record sed -ne '/^#[^[:space:]]/s/^#//p' -i \$destdir/etc/locale.gen
 
   record arch-chroot \$destdir hwclock --systohc --utc
   record arch-chroot \$destdir locale-gen
+
+  record systemd-firstboot --root=\$destdir \
+    --hostname=\$hostname \
+    --locale=\$locale \
+    --timezone=$timezone
 } # }}}
 detach_disk() # {{{
 {
