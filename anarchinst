@@ -459,7 +459,7 @@ setup_pkg_repos() # {{{
     repofiles+=($file)
   done
 
-  record pacman-key --refresh-keys
+  record \# pacman-key --refresh-keys
   record mkdir -p \$destdir$pacmand
   for file in $repofiles; do
     record cp \${_ABS0:h}/$file \$destdir$pacmand/$file
