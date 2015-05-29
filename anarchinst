@@ -298,7 +298,7 @@
 #
 # # X server + basic tools
 #   xf86-input-{evdev,keyboard,mouse,synaptics,vmmouse,void}
-#   xf86-video-{fbdev,intel,modesetting,vesa}
+#   xf86-video-{fbdev,intel,vesa}
 #   xorg-server{,-common}
 #   xorg-{setxkbmap,xkbcomp,xkbevd,xkbutils}
 #   xorg-{xdpyinfo,xdriinfo,xev,xwd}
