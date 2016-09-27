@@ -1,0 +1,7 @@
+needs to be testable w/o root account
+  root is needed only by parted reading the current disklabel.
+  workaround: let the user provide the disklabel in a file.
+  possible interfaces:
+  * optional --disklabel $file obviating the `parted print` call
+  * optional $2 obviating the `parted print` call
+  * optional $currdisklabel definition in $configfile

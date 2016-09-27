@@ -189,6 +189,16 @@
 # # optional, defaults to the result of `mktemp -d`
 # #destdir=/mnt
 #
+# # pacman(8) configuration
+# pacman_conf='
+# [options]
+# HoldPkg = pacman glibc
+# Architecture = auto
+# CheckSpace
+# SigLevel = Required DatabaseOptional
+# LocalFileSigLevel = Optional
+# '
+#
 # # pacman(8) repositories
 # std_repos=(
 #   core
@@ -274,7 +284,7 @@
 #   # osc comes from openSUSE:Tools in OBS
 #   # rpm-org (normally in AUR) comes from home:roman-neuhauser in OBS
 #   osc
-#   rpm-org # unexpressed dependency of osc
+#   # rpm-org # unexpressed dependency of osc
 #
 # # audio
 #   pulseaudio{,-alsa} ponymix
@@ -298,7 +308,7 @@
 #
 # # X server + basic tools
 #   xf86-input-{evdev,keyboard,mouse,synaptics,vmmouse,void}
-#   xf86-video-{fbdev,intel,modesetting,vesa}
+#   xf86-video-{fbdev,intel,vesa}
 #   xorg-server{,-common}
 #   xorg-{setxkbmap,xkbcomp,xkbevd,xkbutils}
 #   xorg-{xdpyinfo,xdriinfo,xev,xwd}
@@ -446,31 +456,26 @@ setup_pkg_repos() # {{{
   local repo file contents
   local -a repofiles
   local -r pacmand=/etc/pacman.d
+  local -r file=pacman.conf
+
+  echo >&2 "JSEM TADY: $PWD"
+  cat >$file <<<"$pacman_conf"
   for repo in $std_repos; do
-    file=$repo.repo
-    print >$file -f '%s\n' \
+    print >>$file -f '%s\n' \
       "[$repo]" \
       "Include = $pacmand/mirrorlist"
-    repofiles+=($file)
   done
   for repo contents in "${(@)custom_repos}"; do
-    file=$repo.repo
-    cat > $file <<<"$contents"
-    repofiles+=($file)
+    cat >>$file <<<"$contents"
   done
 
   record \# pacman-key --refresh-keys
   record mkdir -p \$destdir$pacmand
-  for file in $repofiles; do
-    record cp \${_ABS0:h}/$file \$destdir$pacmand/$file
-  done
-  for file in $repofiles; do
-    record print "Include = $pacmand/$file" '>>' \$destdir/etc/pacman.conf
-  done
+  record cp \${_ABS0:h}/pacman.conf \$destdir/etc/pacman.conf
 } # }}}
 install_packages() # {{{
 {
-  record pacstrap \$destdir ${=software:-base syslinux}
+  record pacstrap -C \${_ABS0:h}/pacman.conf \$destdir ${=software:-base syslinux}
 } # }}}
 find_partition() # {{{
 {
@@ -530,7 +535,8 @@ finalize() # {{{
 {
   record genfstab -U -p \$destdir '>>' \$destdir/etc/fstab
 
-  record sed -ne '/^#[^[:space:]]/s/^#//p' -i \$destdir/etc/locale.gen
+  #record sed -ne '"/^#[^[:space:]]/s/^#//p"' -i \$destdir/etc/locale.gen
+  record print -- \$locale '>>' \$destdir/etc/locale.gen
 
   record arch-chroot \$destdir hwclock --systohc --utc
   record arch-chroot \$destdir locale-gen
